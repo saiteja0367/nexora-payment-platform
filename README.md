@@ -1,3 +1,4 @@
+
 <div align="center">
 
 # NEXORA
@@ -103,17 +104,17 @@ sequenceDiagram
     participant P as Outbox Publisher
     participant K as Kafka
     participant W as Worker
-    C->>A: POST payment + idempotency key
-    A->>D: BEGIN; payment + outbox; COMMIT
+    C->>A: Submit payment with idempotency key
+    A->>D: Save payment and outbox atomically
     D-->>A: Committed
     A-->>C: Payment accepted
     P->>D: Claim pending outbox rows
-    P->>K: Publish event (payment-ID key)
+    P->>K: Publish payment event
     K-->>W: Deliver event
-    W->>D: Transactional inbox + ledger update
+    W->>D: Record inbox and ledger update
     Note over K,W: Redelivery is possible
     K-->>W: Duplicate event
-    W->>D: Existing inbox ID => no duplicate posting
+    W->>D: Inbox prevents duplicate posting
 ```
 
 ### Failure scenarios
