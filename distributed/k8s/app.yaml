@@ -1,0 +1,58 @@
+# Deploy external PostgreSQL and Kafka first. This manifest deliberately avoids
+# embedding insecure production credentials; provide the nexora-config secret.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: nexora-api}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: nexora-api}}
+  template:
+    metadata: {labels: {app: nexora-api}}
+    spec:
+      containers:
+        - name: api
+          image: nexora-api:local
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 8080}]
+          envFrom: [{secretRef: {name: nexora-config}}]
+          readinessProbe: {httpGet: {path: /healthz, port: 8080}, initialDelaySeconds: 5}
+          livenessProbe: {httpGet: {path: /healthz, port: 8080}, initialDelaySeconds: 10}
+          resources: {requests: {cpu: 100m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: nexora-api}
+spec:
+  selector: {app: nexora-api}
+  ports: [{port: 8080, targetPort: 8080}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: nexora-worker}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: nexora-worker}}
+  template:
+    metadata: {labels: {app: nexora-worker}}
+    spec:
+      containers:
+        - name: worker
+          image: nexora-worker:local
+          imagePullPolicy: IfNotPresent
+          envFrom: [{secretRef: {name: nexora-config}}]
+          resources: {requests: {cpu: 100m, memory: 64Mi}, limits: {cpu: 500m, memory: 256Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: nexora-publisher}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: nexora-publisher}}
+  template:
+    metadata: {labels: {app: nexora-publisher}}
+    spec:
+      containers:
+        - name: publisher
+          image: nexora-publisher:local
+          imagePullPolicy: IfNotPresent
+          envFrom: [{secretRef: {name: nexora-config}}]
