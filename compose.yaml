@@ -1,0 +1,9 @@
+services:
+  nexora:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - nexora_data:/data
+volumes:
+  nexora_data:
