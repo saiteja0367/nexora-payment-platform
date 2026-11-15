@@ -1,0 +1,12 @@
+syntax = "proto3";
+package nexora;
+option go_package = "github.com/saiteja0367/nexora-payment-platform/distributed/gen/nexora";
+// The current running gRPC service uses google.protobuf.Struct for both RPCs.
+// This typed schema is a planned migration; it is NOT currently wired into the server.
+message CreatePaymentRequest { string idempotency_key = 1; int64 amount_cents = 2; }
+message Payment { string id = 1; int64 amount_cents = 2; string status = 3; }
+message GetPaymentRequest { string id = 1; }
+service TypedPaymentService {
+  rpc Create(CreatePaymentRequest) returns (Payment);
+  rpc Get(GetPaymentRequest) returns (Payment);
+}
