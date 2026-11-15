@@ -1,0 +1,84 @@
+name: nexora-distributed
+x-common: &common
+  environment: &env
+    DATABASE_URL: postgres://nexora:nexora@postgres:5432/nexora?sslmode=disable
+    KAFKA_BROKER: kafka:9092
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+  restart: unless-stopped
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD: nexora
+      POSTGRES_DB: nexora
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora"]
+      interval: 3s
+      retries: 20
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  api:
+    <<: *common
+    build: {context: ., args: {SERVICE: api}}
+    environment: *env
+    ports: ["8081:8080", "9090:9090"]
+    depends_on:
+      postgres: {condition: service_healthy}
+  publisher:
+    <<: *common
+    build: {context: ., args: {SERVICE: publisher}}
+    environment: *env
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_started}
+  worker:
+    <<: *common
+    build: {context: ., args: {SERVICE: worker}}
+    environment: *env
+    deploy: {replicas: 2}
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_started}
+  reconciler:
+    <<: *common
+    build: {context: ., args: {SERVICE: reconciler}}
+    environment: *env
+    depends_on:
+      postgres: {condition: service_healthy}
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./observability/tempo.yaml:/etc/tempo.yaml:ro"]
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes: ["./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9091:9090"]
+    depends_on: [api]
+  grafana:
+    image: grafana/grafana:11.3.1
+    ports: ["3000:3000"]
+    environment: {GF_AUTH_ANONYMOUS_ENABLED: 'true', GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer}
+    volumes:
+      - ./observability/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./observability/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./observability/faultlab-dashboard.json:/var/lib/grafana/dashboards/nexora-dashboard.json:ro
+volumes:
+  pgdata:
