@@ -249,11 +249,6 @@ nexora-payment-platform/
 └── README.md
 ```
 
-## Engineering Roadmap
-
-Nexora's longer-term design includes durable authorization/capture/refund workflows, typed Protobuf services, provider routing and failover, durable signed webhooks, saga orchestration, Kafka DLQ/replay, merchant isolation, JWT/mTLS, KEDA-based scaling, chaos experiments, disaster recovery, and measured performance benchmarks.
-
-These are **development goals**, not claims of implemented production functionality. See [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) and [`docs/IMPLEMENTATION-GAPS.md`](docs/IMPLEMENTATION-GAPS.md).
 
 
 ## Design Principles
