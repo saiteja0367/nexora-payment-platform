@@ -255,14 +255,6 @@ Nexora's longer-term design includes durable authorization/capture/refund workfl
 
 These are **development goals**, not claims of implemented production functionality. See [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) and [`docs/IMPLEMENTATION-GAPS.md`](docs/IMPLEMENTATION-GAPS.md).
 
-## Documentation
-
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — invariants, failure windows, and system boundaries
-- [`docs/SCALING.md`](docs/SCALING.md) — publishing and worker scaling considerations
-- [`docs/ENGINEERING-STATUS.md`](docs/ENGINEERING-STATUS.md) — implementation and verification matrix
-- [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) — experimental approach
-- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — security assumptions and risks
-- [`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md) — planned capabilities
 
 ## Design Principles
 
